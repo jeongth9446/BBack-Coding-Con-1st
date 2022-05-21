@@ -2,7 +2,9 @@ package com.example.bbackcodingcon.feature_memo.presentation.memos
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Text
@@ -11,8 +13,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -32,6 +36,7 @@ fun PasswordSaveDialog(viewModel: AddEditMemoViewModel, onDismiss: () -> Unit) {
                 onValueChange = {
                     viewModel.onEvent(AddEditMemoEvent.ChangePassword(it))
                 },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 visualTransformation = PasswordVisualTransformation(),
                 maxLines = 1,
             )
@@ -39,16 +44,20 @@ fun PasswordSaveDialog(viewModel: AddEditMemoViewModel, onDismiss: () -> Unit) {
             Button(onClick = {
                 viewModel.onEvent(AddEditMemoEvent.SaveMemo)
                 viewModel.passwordState.value = false
-            }) {
+            }, modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("저장")
             }
         }
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PasswordConfirmDialog(memokPassword: String, onSuccess: ()->Unit, onDismiss: ()-> Unit, onFailure: ()->Unit) {
     val tempPassword: MutableState<String> = remember { mutableStateOf("") }
+
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     Dialog(onDismissRequest = {onDismiss()}) {
         Column(modifier = Modifier.background(Color.White).padding(24.dp)) {
@@ -59,6 +68,12 @@ fun PasswordConfirmDialog(memokPassword: String, onSuccess: ()->Unit, onDismiss:
                     tempPassword.value = it
                 },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if(memokPassword == tempPassword.value)
+                            onSuccess()
+                        else onFailure()
+                        keyboardController?.hide()}),
                 visualTransformation = PasswordVisualTransformation(),
                 maxLines = 1,
             )
@@ -67,7 +82,8 @@ fun PasswordConfirmDialog(memokPassword: String, onSuccess: ()->Unit, onDismiss:
                 if(memokPassword == tempPassword.value)
                     onSuccess()
                 else onFailure()
-            }) {
+            }, modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("확인")
             }
         }
